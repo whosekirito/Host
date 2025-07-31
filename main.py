@@ -336,6 +336,78 @@ class BotManager:
 
 bot_manager = BotManager()
 
+# Auto dependency detection and installation for premium users
+def detect_and_install_dependencies(file_path, is_premium=False):
+    """Auto detect and install dependencies from Python file"""
+    if not is_premium:
+        return True, "Auto dependency installation is a premium feature"
+    
+    try:
+        with open(file_path, 'r') as f:
+            content = f.read()
+        
+        # Common libraries and their pip names
+        dependency_map = {
+            'requests': 'requests',
+            'flask': 'flask',
+            'django': 'django',
+            'numpy': 'numpy',
+            'pandas': 'pandas',
+            'matplotlib': 'matplotlib',
+            'seaborn': 'seaborn',
+            'opencv': 'opencv-python',
+            'cv2': 'opencv-python',
+            'PIL': 'Pillow',
+            'telegram': 'python-telegram-bot',
+            'discord': 'discord.py',
+            'beautifulsoup4': 'beautifulsoup4',
+            'bs4': 'beautifulsoup4',
+            'selenium': 'selenium',
+            'scrapy': 'scrapy',
+            'sqlalchemy': 'sqlalchemy',
+            'psycopg2': 'psycopg2-binary',
+            'mysql': 'mysql-connector-python',
+            'redis': 'redis',
+            'celery': 'celery',
+            'fastapi': 'fastapi',
+            'uvicorn': 'uvicorn',
+            'aiohttp': 'aiohttp',
+            'asyncio': '',  # Built-in
+            'json': '',     # Built-in
+            'os': '',       # Built-in
+            'sys': '',      # Built-in
+            'datetime': '', # Built-in
+            're': '',       # Built-in
+            'time': '',     # Built-in
+            'random': '',   # Built-in
+            'math': '',     # Built-in
+        }
+        
+        # Find import statements
+        import re
+        imports = re.findall(r'^(?:from\s+(\w+)|import\s+(\w+))', content, re.MULTILINE)
+        detected_deps = set()
+        
+        for from_import, direct_import in imports:
+            module = from_import or direct_import
+            if module in dependency_map and dependency_map[module]:
+                detected_deps.add(dependency_map[module])
+        
+        if detected_deps:
+            # Install detected dependencies
+            deps_list = list(detected_deps)
+            try:
+                result = subprocess.run(["python3", "-m", "pip", "install"] + deps_list, 
+                                       check=True, capture_output=True, text=True)
+                return True, f"Auto-installed dependencies: {', '.join(deps_list)}"
+            except subprocess.CalledProcessError as e:
+                return False, f"Failed to auto-install dependencies: {e.stderr}"
+        else:
+            return True, "No additional dependencies detected"
+            
+    except Exception as e:
+        return False, f"Error in auto dependency detection: {str(e)}"
+
 # Install requirements
 def install_requirements(requirements_path):
     try:
@@ -407,27 +479,8 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     reply_markup = InlineKeyboardMarkup(keyboard)
     
-    # Special welcome message for admin
-    if user_id in ADMIN_IDS:
-        welcome_text = f"""🤖 **Kɪʀɪᴛᴏ Hᴏsᴛ Bᴏᴛ**
-
-✨ **ᴡᴇʟᴄᴏᴍᴇ Kɪʀɪᴛᴏ!** ✨
-
-🚀 **ғᴇᴀᴛᴜʀᴇs:**
-• Python & Node.js bots
-• 24/7 hosting with auto-restart
-• Real-time logs & monitoring
-• Auto dependency installation
-
-📋 **ʏᴏᴜʀ ᴘʟᴀɴ:** 👑 Admin - Unlimited bots
-
-🎯 **ǫᴜɪᴄᴋ sᴛᴀʀᴛ:**
-1. Click "Create New Bot"
-2. Enter bot name
-3. Upload main.py and requirements.txt
-4. Your bot runs 24/7!"""
-    else:
-        welcome_text = f"""🤖 **Kɪʀɪᴛᴏ Hᴏsᴛ Bᴏᴛ**
+    # Welcome message for all users (removed admin-only restriction)
+    welcome_text = f"""🤖 **Kɪʀɪᴛᴏ Hᴏsᴛ Bᴏᴛ**
 
 ✨ **ᴡᴇʟᴄᴏᴍᴇ {username}!** ✨
 
@@ -435,6 +488,7 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 • Python & Node.js bots
 • 24/7 hosting with auto-restart
 • Real-time logs & monitoring
+{f'• Auto dependency installation' if sub_type == 'premium' else ''}
 
 📋 **ʏᴏᴜʀ ᴘʟᴀɴ:** {sub_type.title()} - {'Unlimited' if user_id in ADMIN_IDS else ('15' if sub_type == 'premium' else '1')} bots
 🤖 **Bots Deployed:** {bots_count}
@@ -474,634 +528,4 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if data == "create_bot":
         sub_type, expiry, bots_count = get_user_subscription(user_id)
-        
-        # Admin users have unlimited bots
-        if user_id not in ADMIN_IDS:
-            max_bots = 1 if sub_type == 'free' else 15
-            if bots_count >= max_bots:
-                await query.edit_message_caption(
-                    caption=f"❌ **Bot Limit Reached**\n\n"
-                           f"You have reached your limit of {max_bots} bots.\n"
-                           f"{'Upgrade to Premium to deploy up to 15 bots!' if sub_type == 'free' else 'Contact admin for more bots.'}",
-                    parse_mode='Markdown'
-                )
-                return
-        
-        set_creation_state(user_id, 'waiting_name')
-        
-        # Add cancel button
-        keyboard = [[InlineKeyboardButton("❌ Cancel", callback_data="cancel_creation")]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        await query.edit_message_caption(
-            caption="🤖 **Create New Bot**\n\n"
-                   "Please enter a name for your bot (alphanumeric only):",
-            reply_markup=reply_markup,
-            parse_mode='Markdown'
-        )
-    
-    elif data == "mybots":
-        user_bots = get_user_bots(user_id)
-        if not user_bots:
-            await query.edit_message_caption(
-                caption="🤖 **Your Bots**\n\nYou don't have any bots yet.\nClick 'Create New Bot' to get started!",
-                parse_mode='Markdown'
-            )
-        else:
-            bot_list = "🤖 **Your Bots:**\n\n"
-            keyboard = []
-            for bot_name, bot_type, status in user_bots:
-                status_emoji = "🟢" if status == "running" else "🔴"
-                bot_list += f"{status_emoji} **{bot_name}** ({bot_type})\n"
-                keyboard.append([
-                    InlineKeyboardButton(f"⚙️ {bot_name}", callback_data=f"manage_{bot_name}"),
-                    InlineKeyboardButton("📊" if status == "running" else "▶️", 
-                                       callback_data=f"logs_{bot_name}" if status == "running" else f"start_{bot_name}")
-                ])
-            
-            keyboard.append([InlineKeyboardButton("🏠 Main Menu", callback_data="mainmenu")])
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            
-            await query.edit_message_caption(
-                caption=bot_list,
-                reply_markup=reply_markup,
-                parse_mode='Markdown'
-            )
-    
-    elif data.startswith("manage_"):
-        bot_name = data.split("_", 1)[1]
-        keyboard = [
-            [InlineKeyboardButton("▶️ Start", callback_data=f"start_{bot_name}"),
-             InlineKeyboardButton("⏹️ Stop", callback_data=f"stop_{bot_name}")],
-            [InlineKeyboardButton("🔄 Restart", callback_data=f"restart_{bot_name}"),
-             InlineKeyboardButton("📊 Logs", callback_data=f"logs_{bot_name}")],
-            [InlineKeyboardButton("🗑️ Delete", callback_data=f"delete_{bot_name}"),
-             InlineKeyboardButton("🔙 Back", callback_data="mybots")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        await query.edit_message_caption(
-            caption=f"⚙️ **Manage Bot: {bot_name}**\n\nChoose an action:",
-            reply_markup=reply_markup,
-            parse_mode='Markdown'
-        )
-    
-    elif data.startswith("start_"):
-        bot_name = data.split("_", 1)[1]
-        
-        # Get bot info from DB for proper start
-        conn = sqlite3.connect('bot_hosting.db')
-        cursor = conn.cursor()
-        cursor.execute('SELECT bot_type, file_path FROM user_bots WHERE user_id = ? AND bot_name = ?',
-                      (user_id, bot_name))
-        result = cursor.fetchone()
-        conn.close()
-        
-        if result:
-            bot_type, file_path = result
-            if file_path and os.path.exists(file_path):
-                success, message = bot_manager.start_bot(user_id, bot_name, bot_type, file_path)
-            else:
-                success, message = False, "Bot file not found or path is empty"
-        else:
-            success, message = False, "Bot not found in database"
-        
-        await query.answer(f"✅ {message}" if success else f"❌ {message}", show_alert=True)
-    
-    elif data.startswith("stop_"):
-        bot_name = data.split("_", 1)[1]
-        success, message = bot_manager.stop_bot(user_id, bot_name)
-        await query.answer(f"⏹️ {message}" if success else f"❌ {message}", show_alert=True)
-    
-    elif data.startswith("restart_"):
-        bot_name = data.split("_", 1)[1]
-        success, message = bot_manager.restart_bot(user_id, bot_name)
-        await query.answer(f"🔄 {message}" if success else f"❌ {message}", show_alert=True)
-    
-    elif data.startswith("logs_"):
-        bot_name = data.split("_", 1)[1]
-        logs = bot_manager.get_bot_logs(user_id, bot_name)
-        log_text = "\n".join(logs[-20:])  # Last 20 logs
-        
-        await query.edit_message_caption(
-            caption=f"📊 **Bot Logs: {bot_name}**\n\n```\n{log_text}\n```",
-            parse_mode='Markdown'
-        )
-    
-    elif data.startswith("delete_"):
-        bot_name = data.split("_", 1)[1]
-        keyboard = [
-            [InlineKeyboardButton("❌ Yes, Delete", callback_data=f"confirm_delete_{bot_name}"),
-             InlineKeyboardButton("✅ Cancel", callback_data="mybots")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        await query.edit_message_caption(
-            caption=f"⚠️ **Delete Bot: {bot_name}**\n\nAre you sure? This action cannot be undone!",
-            reply_markup=reply_markup,
-            parse_mode='Markdown'
-        )
-    
-    elif data.startswith("confirm_delete_"):
-        bot_name = data.split("_", 2)[2]
-        bot_manager.stop_bot(user_id, bot_name)
-        delete_bot_from_db(user_id, bot_name)
-        
-        # Delete files
-        bot_dir = os.path.join(UPLOAD_FOLDER, str(user_id), bot_name)
-        if os.path.exists(bot_dir):
-            shutil.rmtree(bot_dir)
-        
-        await query.answer("🗑️ Bot deleted successfully!", show_alert=True)
-        # Redirect to mybots
-        await button_callback(update, context)  # Simulate mybots click
-    
-    elif data == "subscription":
-        sub_type, expiry, bots_count = get_user_subscription(user_id)
-        
-        keyboard = []
-        if sub_type == 'free':
-            keyboard.append([InlineKeyboardButton("💎 Upgrade to Premium (₹799/month)", callback_data="upgrade_premium")])
-        
-        keyboard.append([InlineKeyboardButton("🏠 Main Menu", callback_data="mainmenu")])
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        expiry_text = f"Expires: {expiry}" if expiry else "No expiry"
-        
-        await query.edit_message_caption(
-            caption=f"💳 **Your Subscription**\n\n"
-                   f"Plan: {sub_type.title()}\n"
-                   f"Max Bots: {'1' if sub_type == 'free' else '15'}\n"
-                   f"Deployed: {bots_count}\n"
-                   f"{expiry_text if sub_type != 'free' else ''}\n\n"
-                   f"{'Upgrade to Premium for more bots!' if sub_type == 'free' else 'Thank you for being Premium!'}",
-            reply_markup=reply_markup,
-            parse_mode='Markdown'
-        )
-    
-    elif data == "upgrade_premium":
-        keyboard = [
-            [InlineKeyboardButton("💸 Pay ₹799", url="https://t.me/YourPaymentBot")],
-            [InlineKeyboardButton("🔙 Back", callback_data="subscription")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        await query.edit_message_caption(
-            caption="💎 **Premium Subscription**\n\n"
-                   "**Benefits:**\n"
-                   "✅ Deploy up to 15 bots\n"
-                   "✅ Priority support\n"
-                   "✅ Advanced features\n"
-                   "✅ No ads\n\n"
-                   "**Price:** ₹799/month\n\n"
-                   "Contact admin after payment for activation.",
-            reply_markup=reply_markup,
-            parse_mode='Markdown'
-        )
-    
-    elif data == "dashboard":
-        user_bots = get_user_bots(user_id)
-        sub_type, expiry, bots_count = get_user_subscription(user_id)
-        
-        running_bots = len([bot for bot in user_bots if bot[2] == 'running'])
-        stopped_bots = len([bot for bot in user_bots if bot[2] == 'stopped'])
-        
-        keyboard = [[InlineKeyboardButton("🏠 Main Menu", callback_data="mainmenu")]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        await query.edit_message_caption(
-            caption=f"📊 **Your Dashboard**\n\n"
-                   f"💳 **Subscription:** {sub_type.title()}\n"
-                   f"🤖 **Total Bots:** {bots_count}\n"
-                   f"🟢 **Running:** {running_bots}\n"
-                   f"🔴 **Stopped:** {stopped_bots}\n"
-                   f"⏰ **Max Allowed:** {'1' if sub_type == 'free' else '15'}\n\n"
-                   f"📅 **Joined:** {datetime.now().strftime('%Y-%m-%d')}",
-            reply_markup=reply_markup,
-            parse_mode='Markdown'
-        )
-    
-    elif data == "help":
-        keyboard = [[InlineKeyboardButton("🏠 Main Menu", callback_data="mainmenu")]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        help_text = """
-ℹ️ **Help & Support**
-
-**How to use:**
-1. Click 'Create New Bot'
-2. Enter bot name
-3. Upload main.py file
-4. Upload requirements.txt file
-5. Bot will be automatically deployed!
-
-**Features:**
-🤖 Python bot hosting
-📊 Real-time logs
-🔄 Auto-restart
-⚙️ Easy management
-
-**Limits:**
-🆓 Free: 1 bot
-💎 Premium: 15 bots (₹799/month)
-
-**Support:**
-💬 Support Group: @AACBotSupport
-📢 Updates: @Kirito_Bots
-        """
-        
-        await query.edit_message_caption(
-            caption=help_text,
-            reply_markup=reply_markup,
-            parse_mode='Markdown'
-        )
-    
-    elif data == "admin_panel" and user_id in ADMIN_IDS:
-        keyboard = [
-            [InlineKeyboardButton("👥 Give Subscription", callback_data="admin_give_sub"),
-             InlineKeyboardButton("📢 Broadcast", callback_data="admin_broadcast")],
-            [InlineKeyboardButton("📊 Statistics", callback_data="admin_stats"),
-             InlineKeyboardButton("👥 Users", callback_data="admin_users")],
-            [InlineKeyboardButton("🏠 Main Menu", callback_data="mainmenu")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        try:
-            await query.edit_message_caption(
-                caption="👑 **Admin Panel**\n\nChoose an action:",
-                reply_markup=reply_markup,
-                parse_mode='Markdown'
-            )
-        except Exception:
-            await query.message.reply_text(
-                "👑 **Admin Panel**\n\nChoose an action:",
-                reply_markup=reply_markup,
-                parse_mode='Markdown'
-            )
-    
-    # Handle admin-specific callbacks
-    elif data.startswith("admin_") and user_id in ADMIN_IDS:
-        from admin_handlers import handle_admin_commands
-        await handle_admin_commands(update, context, data)
-    
-    elif data == "cancel_creation":
-        clear_creation_state(user_id)
-        await query.answer("❌ Bot creation cancelled", show_alert=True)
-        
-        # Return to main menu
-        user_id = query.from_user.id
-        username = query.from_user.username or "Unknown"
-        
-        create_user(user_id, username)
-        sub_type, expiry, bots_count = get_user_subscription(user_id)
-        
-        keyboard = [
-            [InlineKeyboardButton("🤖 Create New Bot", callback_data="create_bot")],
-            [InlineKeyboardButton("📱 My Bots", callback_data="mybots"), 
-             InlineKeyboardButton("💳 Subscription", callback_data="subscription")],
-            [InlineKeyboardButton("📊 Dashboard", callback_data="dashboard"),
-             InlineKeyboardButton("ℹ️ Help", callback_data="help")],
-            [InlineKeyboardButton("💬 Support", url=SUPPORT_GROUP),
-             InlineKeyboardButton("📢 Updates", url=UPDATE_CHANNEL)]
-        ]
-        
-        if user_id in ADMIN_IDS:
-            keyboard.append([InlineKeyboardButton("👑 Admin Panel", callback_data="admin_panel")])
-        
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        # Special welcome message for admin
-        if user_id in ADMIN_IDS:
-            welcome_text = f"""🤖 **Kɪʀɪᴛᴏ Hᴏsᴛ Bᴏᴛ**
-
-✨ **ᴡᴇʟᴄᴏᴍᴇ Kɪʀɪᴛᴏ!** ✨
-
-🚀 **ғᴇᴀᴛᴜʀᴇs:**
-• Python & Node.js bots
-• 24/7 hosting with auto-restart
-• Real-time logs & monitoring
-• Auto dependency installation
-
-📋 **ʏᴏᴜʀ ᴘʟᴀɴ:** 👑 Admin - Unlimited bots
-
-🎯 **ǫᴜɪᴄᴋ sᴛᴀʀᴛ:**
-1. Click "Create New Bot"
-2. Enter bot name
-3. Upload main.py and requirements.txt
-4. Your bot runs 24/7!"""
-        else:
-            welcome_text = f"""🤖 **Kɪʀɪᴛᴏ Hᴏsᴛ Bᴏᴛ**
-
-✨ **ᴡᴇʟᴄᴏᴍᴇ {username}!** ✨
-
-🚀 **ғᴇᴀᴛᴜʀᴇs:**
-• Python & Node.js bots
-• 24/7 hosting with auto-restart
-• Real-time logs & monitoring
-
-📋 **ʏᴏᴜʀ ᴘʟᴀɴ:** {sub_type.title()} - {'Unlimited' if user_id in ADMIN_IDS else ('15' if sub_type == 'premium' else '1')} bots
-🤖 **Bots Deployed:** {bots_count}
-
-🎯 **ǫᴜɪᴄᴋ sᴛᴀʀᴛ:**
-1. Click "Create New Bot"
-2. Upload files and start hosting!"""
-        
-        await query.edit_message_caption(
-            caption=welcome_text,
-            reply_markup=reply_markup,
-            parse_mode='Markdown'
-        )
-        return
-    
-    elif data == "mainmenu":
-        # Handle main menu properly for callback queries
-        user_id = query.from_user.id
-        username = query.from_user.username or "Unknown"
-        
-        create_user(user_id, username)
-        sub_type, expiry, bots_count = get_user_subscription(user_id)
-        
-        keyboard = [
-            [InlineKeyboardButton("🤖 Create New Bot", callback_data="create_bot")],
-            [InlineKeyboardButton("📱 My Bots", callback_data="mybots"), 
-             InlineKeyboardButton("💳 Subscription", callback_data="subscription")],
-            [InlineKeyboardButton("📊 Dashboard", callback_data="dashboard"),
-             InlineKeyboardButton("ℹ️ Help", callback_data="help")],
-            [InlineKeyboardButton("💬 Support", url=SUPPORT_GROUP),
-             InlineKeyboardButton("📢 Updates", url=UPDATE_CHANNEL)]
-        ]
-        
-        if user_id in ADMIN_IDS:
-            keyboard.append([InlineKeyboardButton("👑 Admin Panel", callback_data="admin_panel")])
-        
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        # Special welcome message for admin
-        if user_id in ADMIN_IDS:
-            welcome_text = f"""🤖 **Kɪʀɪᴛᴏ Hᴏsᴛ Bᴏᴛ**
-
-✨ **ᴡᴇʟᴄᴏᴍᴇ Kɪʀɪᴛᴏ!** ✨
-
-🚀 **ғᴇᴀᴛᴜʀᴇs:**
-• Python & Node.js bots
-• 24/7 hosting with auto-restart
-• Real-time logs & monitoring
-• Auto dependency installation
-
-📋 **ʏᴏᴜʀ ᴘʟᴀɴ:** 👑 Admin - Unlimited bots
-
-🎯 **ǫᴜɪᴄᴋ sᴛᴀʀᴛ:**
-1. Click "Create New Bot"
-2. Enter bot name
-3. Upload main.py and requirements.txt
-4. Your bot runs 24/7!"""
-        else:
-            welcome_text = f"""🤖 **Kɪʀɪᴛᴏ Hᴏsᴛ Bᴏᴛ**
-
-✨ **ᴡᴇʟᴄᴏᴍᴇ {username}!** ✨
-
-🚀 **ғᴇᴀᴛᴜʀᴇs:**
-• Python & Node.js bots
-• 24/7 hosting with auto-restart
-• Real-time logs & monitoring
-
-📋 **ʏᴏᴜʀ ᴘʟᴀɴ:** {sub_type.title()} - {'Unlimited' if user_id in ADMIN_IDS else ('15' if sub_type == 'premium' else '1')} bots
-🤖 **Bots Deployed:** {bots_count}
-
-🎯 **ǫᴜɪᴄᴋ sᴛᴀʀᴛ:**
-1. Click "Create New Bot"
-2. Upload files and start hosting!"""
-        
-        try:
-            # Try to edit message caption first
-            if query.message.caption:
-                await query.edit_message_caption(
-                    caption=welcome_text,
-                    reply_markup=reply_markup,
-                    parse_mode='Markdown'
-                )
-            else:
-                # If no caption exists, send new photo message
-                await query.message.reply_photo(
-                    photo=START_IMAGE,
-                    caption=welcome_text,
-                    reply_markup=reply_markup,
-                    parse_mode='Markdown'
-                )
-        except Exception as e:
-            logger.error(f"Error handling main menu: {e}")
-            # Fallback: delete old message and send new one
-            try:
-                await query.message.delete()
-            except:
-                pass
-            await context.bot.send_photo(
-                chat_id=query.message.chat_id,
-                photo=START_IMAGE,
-                caption=welcome_text,
-                reply_markup=reply_markup,
-                parse_mode='Markdown'
-            )
-
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = update.effective_user.id
-    
-    # Check if the message is in private chat only
-    if update.message.chat.type != 'private':
-        return
-    
-    # Check creation state
-    state_info = get_creation_state(user_id)
-    if not state_info:
-        return
-    
-    state, bot_name, main_file_path, requirements_path = state_info
-    
-    if state == 'waiting_name':
-        bot_name = update.message.text.strip()
-        if not bot_name.replace('_', '').isalnum():
-            keyboard = [[InlineKeyboardButton("❌ Cancel", callback_data="cancel_creation")]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            await update.message.reply_text(
-                "❌ Bot name must be alphanumeric only. Please try again:",
-                reply_markup=reply_markup
-            )
-            return
-        
-        set_creation_state(user_id, 'waiting_main_file', bot_name=bot_name)
-        
-        keyboard = [[InlineKeyboardButton("❌ Cancel", callback_data="cancel_creation")]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        await update.message.reply_text(
-            f"✅ Bot name set: **{bot_name}**\n\nNow send your main.py file:",
-            reply_markup=reply_markup,
-            parse_mode='Markdown'
-        )
-    
-    elif state == 'waiting_main_file':
-        if not update.message.document:
-            keyboard = [[InlineKeyboardButton("❌ Cancel", callback_data="cancel_creation")]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            await update.message.reply_text(
-                "❌ Please send a Python file (.py)",
-                reply_markup=reply_markup
-            )
-            return
-        
-        file = update.message.document
-        if not file.file_name.endswith('.py'):
-            keyboard = [[InlineKeyboardButton("❌ Cancel", callback_data="cancel_creation")]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            await update.message.reply_text(
-                "❌ Please send a Python file (.py)",
-                reply_markup=reply_markup
-            )
-            return
-        
-        # Download main file
-        user_folder = os.path.join(UPLOAD_FOLDER, str(user_id), bot_name)
-        os.makedirs(user_folder, exist_ok=True)
-        
-        new_file = await context.bot.get_file(file.file_id)
-        main_file_path = os.path.join(user_folder, "main.py")
-        await new_file.download_to_drive(main_file_path)
-        
-        # Normalize path to prevent duplicates
-        main_file_path = os.path.normpath(os.path.abspath(main_file_path))
-        logger.info(f"Main file saved at: {main_file_path}")
-        
-        # Store file in database channel
-        await store_file_in_database(context, main_file_path, user_id, bot_name, "main.py")
-        
-        set_creation_state(user_id, 'waiting_requirements', bot_name=bot_name, main_file_path=main_file_path)
-        
-        keyboard = [[InlineKeyboardButton("❌ Cancel", callback_data="cancel_creation")]]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        await update.message.reply_text(
-            "✅ Main file uploaded!\n\nNow send your requirements.txt file:",
-            reply_markup=reply_markup
-        )
-    
-    elif state == 'waiting_requirements':
-        if not update.message.document:
-            keyboard = [[InlineKeyboardButton("❌ Cancel", callback_data="cancel_creation")]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            await update.message.reply_text(
-                "❌ Please send requirements.txt file",
-                reply_markup=reply_markup
-            )
-            return
-        
-        file = update.message.document
-        if file.file_name != 'requirements.txt':
-            keyboard = [[InlineKeyboardButton("❌ Cancel", callback_data="cancel_creation")]]
-            reply_markup = InlineKeyboardMarkup(keyboard)
-            await update.message.reply_text(
-                "❌ File must be named 'requirements.txt'",
-                reply_markup=reply_markup
-            )
-            return
-        
-        # Download requirements file
-        user_folder = os.path.join(UPLOAD_FOLDER, str(user_id), bot_name)
-        new_file = await context.bot.get_file(file.file_id)
-        requirements_path = os.path.join(user_folder, "requirements.txt")
-        await new_file.download_to_drive(requirements_path)
-        
-        # Store requirements file in database channel
-        await store_file_in_database(context, requirements_path, user_id, bot_name, "requirements.txt")
-        
-        status_msg = await update.message.reply_text("📦 Installing requirements... Please wait...")
-        
-        # Install requirements
-        success, message = install_requirements(requirements_path)
-        if not success:
-            await status_msg.edit_text(f"❌ **Bot Creation Failed**\n\n📦 Requirements installation failed:\n`{message}`", parse_mode='Markdown')
-            clear_creation_state(user_id)
-            return
-        
-        await status_msg.edit_text("✅ Requirements installed! Creating bot...", parse_mode='Markdown')
-        
-        # Add bot to database with correct file path
-        add_bot_to_db(user_id, bot_name, 'python', main_file_path)
-        clear_creation_state(user_id)
-        
-        # Try to start the bot automatically
-        bot_success, bot_message = bot_manager.start_bot(user_id, bot_name, 'python', main_file_path)
-        
-        if bot_success:
-            await status_msg.edit_text(f"🎉 **Bot Hosted Successfully!**\n\n🤖 **{bot_name}** is now running 24/7!\n\n✅ Status: Online\n📊 Logs: Available\n🔄 Auto-restart: Enabled", parse_mode='Markdown')
-        else:
-            await status_msg.edit_text(f"⚠️ **Bot Created but Failed to Start**\n\n🤖 **{bot_name}** was created but couldn't start automatically.\n\n❌ Error: {bot_message}\n\nYou can try starting it manually from 'My Bots'.", parse_mode='Markdown')
-        
-        # Create control buttons
-        keyboard = [
-            [InlineKeyboardButton("▶️ Start Bot", callback_data=f"start_{bot_name}"),
-             InlineKeyboardButton("📊 View Logs", callback_data=f"logs_{bot_name}")],
-            [InlineKeyboardButton("🤖 My Bots", callback_data="mybots"),
-             InlineKeyboardButton("🏠 Main Menu", callback_data="mainmenu")]
-        ]
-        reply_markup = InlineKeyboardMarkup(keyboard)
-        
-        await update.message.reply_text(
-            f"✅ **Bot Created Successfully!**\n\n"
-            f"🤖 **Name:** {bot_name}\n"
-            f"📦 **Requirements:** Installed\n"
-            f"🔧 **Type:** Python\n\n"
-            f"Your bot is ready to start!",
-            reply_markup=reply_markup,
-            parse_mode='Markdown'
-        )
-
-# Bot hosting service runs without web interface
-
-async def run_telegram_bot():
-    application = Application.builder().token(BOT_TOKEN).build()
-    
-    # Import admin handlers
-    from admin_handlers import give_subscription_command, broadcast_command
-    
-    # Add handlers
-    application.add_handler(CommandHandler("start", start_command))
-    application.add_handler(CommandHandler("givesub", give_subscription_command))
-    application.add_handler(CommandHandler("broadcast", broadcast_command))
-    application.add_handler(CallbackQueryHandler(button_callback))
-    application.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, handle_message))
-    
-    # Start bot
-    await application.initialize()
-    await application.start()
-    await application.updater.start_polling(drop_pending_updates=True)
-    
-    # Keep the bot running
-    import signal
-    stop_signals = (signal.SIGTERM, signal.SIGINT)
-    for sig in stop_signals:
-        signal.signal(sig, lambda s, f: asyncio.create_task(application.stop()))
-    
-    try:
-        await asyncio.Event().wait()
-    except KeyboardInterrupt:
-        pass
-    finally:
-        await application.updater.stop()
-        await application.stop()
-        await application.shutdown()
-
-async def main():
-    # Ensure upload directory exists
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    
-    print("🚀 Bot Hosting Service Started!")
-    print("📱 Telegram Bot: Running")
-    print("🔒 Private Chat Only: Enabled")
-    print(f"📢 Support: {SUPPORT_GROUP}")
-    print(f"📢 Updates: {UPDATE_CHANNEL}")
-    
-    # Start Telegram bot
-    await run_telegram_bot()
-
-if __name__ == "__main__":
-    asyncio.run(main())
+       
