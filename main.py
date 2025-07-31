@@ -24,7 +24,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Bot configuration
-BOT_TOKEN = "8202785686:AAHYVCcuL_AyGiZikBE1pw2ldDKuqOYMNsA"
+BOT_TOKEN = "8202785686:AAFjRhkDXJyvnJk1qsdF6PJK_xgZhoShUjw"
 UPLOAD_FOLDER = "uploaded_bots"
 RUNNING_BOTS = {}
 START_IMAGE = "https://te.legra.ph/file/acc3bbc9896f9daee3915-952021b9936dc43a13.jpg"
