@@ -1114,7 +1114,7 @@ async def process_bot_creation(update, context, user_id, bot_name, main_file_pat
 
     if hasattr(update, 'callback_query'):
         # Called from callback query
-        message = update.callback_query.message
+        message = update.effective_message
         edit_func = message.edit_text
     else:
         # Called from message handler
