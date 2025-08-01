@@ -6,6 +6,8 @@ import threading
 import time
 import shutil
 import json
+import threading
+from flask_server import run as run_flask
 import sqlite3
 from datetime import datetime, timedelta
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
@@ -1074,4 +1076,5 @@ async def main():
     await run_telegram_bot()
 
 if __name__ == "__main__":
+    threading.Thread(target=run_flask).start()
     asyncio.run(main())
