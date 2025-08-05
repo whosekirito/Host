@@ -35,7 +35,7 @@ def run_flask():
     app.run(host='0.0.0.0', port=port, debug=False)
 
 # Bot configuration
-BOT_TOKEN = os.environ.get("BOT_TOKEN", "8202785686:AAFjRhkDXJyvnJk1qsdF6PJK_xgZhoShUjw")
+BOT_TOKEN = os.environ.get("BOT_TOKEN", "8202785686:AAGRnFARdNJA0mk4zLogg1sgo9R_G5VhB-A")
 UPLOAD_FOLDER = "uploaded_bots"
 RUNNING_BOTS = {}
 START_IMAGE = "https://te.legra.ph/file/acc3bbc9896f9daee3915-952021b9936dc43a13.jpg"
