@@ -1093,7 +1093,7 @@ async def process_bot_creation(update, context, user_id, bot_name, main_file_pat
         parse_mode='Markdown'
     )
 
-async def run_telegram_bot():
+ async def run_telegram_bot():
     # Build application with proper configuration
     application = Application.builder().token(BOT_TOKEN).build()
 
@@ -1115,50 +1115,11 @@ async def run_telegram_bot():
     application.add_handler(CallbackQueryHandler(button_callback))
     application.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, handle_message))
 
-    # Start the bot with proper error handling
-    try:
-        # Initialize and start polling
-        await application.initialize()
-        await application.start()
-        
-        # Start polling with proper configuration
-        await application.updater.start_polling(
-            drop_pending_updates=True,
-            allowed_updates=None
-        )
-        
-        logger.info("Telegram bot started successfully")
-        
-        # Keep running until stopped
-        import signal
-        stop_signals = (signal.SIGTERM, signal.SIGINT)
-        
-        # Create a stop event
-        stop_event = asyncio.Event()
-        
-        def signal_handler(signum, frame):
-            logger.info(f"Received signal {signum}, stopping bot...")
-            stop_event.set()
-        
-        for sig in stop_signals:
-            signal.signal(sig, signal_handler)
-        
-        # Wait until stop event is set
-        await stop_event.wait()
-        
-    except KeyboardInterrupt:
-        logger.info("Bot stopped by user")
-    except Exception as e:
-        logger.error(f"Error running Telegram bot: {e}")
-        raise
-    finally:
-        # Clean shutdown
-        try:
-            await application.updater.stop()
-            await application.stop()
-            await application.shutdown()
-        except Exception as e:
-            logger.error(f"Error during bot shutdown: {e}")
+    # ✅ Start the bot using PTB v20+ run_polling()
+    await application.run_polling(
+        drop_pending_updates=True,
+        allowed_updates=None
+    )
 
 async def main():
     # Ensure upload directory exists
