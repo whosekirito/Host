@@ -1093,7 +1093,7 @@ async def process_bot_creation(update, context, user_id, bot_name, main_file_pat
         parse_mode='Markdown'
     )
 
- async def run_telegram_bot():
+async def run_telegram_bot():
     # Build application with proper configuration
     application = Application.builder().token(BOT_TOKEN).build()
 
@@ -1121,6 +1121,7 @@ async def process_bot_creation(update, context, user_id, bot_name, main_file_pat
         allowed_updates=None
     )
 
+
 async def main():
     # Ensure upload directory exists
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -1137,6 +1138,7 @@ async def main():
 
     # Start Telegram bot
     await run_telegram_bot()
+
 
 if __name__ == "__main__":
     asyncio.run(main())
