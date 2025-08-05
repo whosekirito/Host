@@ -1,3 +1,6 @@
 python-telegram-bot==20.7
-flask==3.0.2
+Flask==3.0.3
 psutil==5.9.8
+uvicorn==0.29.0
+uv==0.1.23  # Optional, fast installer (skip if not using)
+upm==0.2.1  # Optional, fallback installer (skip if not using)
