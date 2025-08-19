@@ -177,4 +177,3 @@ async def handle_admin_commands(update: Update, context: ContextTypes.DEFAULT_TY
                 text=text,
                 reply_markup=reply_markup
             )
-`
