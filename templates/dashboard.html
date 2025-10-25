@@ -1,0 +1,233 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Oppai Xd{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <!-- Welcome Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <h2 class="fw-bold text-primary mb-1">
+                                <i class="fas fa-tachometer-alt me-2"></i>Welcome, {{ session.username }}!
+                            </h2>
+                            <p class="text-muted mb-0">Manage your files and account settings</p>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-primary fs-6">{{ plan.title() }} Plan</span>
+                            <p class="text-muted mb-0 small">{{ files_count }}/{{ max_files }} files used</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-file-alt text-primary fs-1 mb-2"></i>
+                    <h4 class="fw-bold">{{ files_count }}</h4>
+                    <p class="text-muted mb-0">Total Files</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-crown text-warning fs-1 mb-2"></i>
+                    <h4 class="fw-bold">{{ plan.title() }}</h4>
+                    <p class="text-muted mb-0">Current Plan</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-hdd text-success fs-1 mb-2"></i>
+                    <h4 class="fw-bold">{{ max_files - files_count }}</h4>
+                    <p class="text-muted mb-0">Files Remaining</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-chart-line text-info fs-1 mb-2"></i>
+                    <h4 class="fw-bold">{{ (files_count/max_files*100)|round(1) }}%</h4>
+                    <p class="text-muted mb-0">Storage Used</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- File Upload Section -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h4 class="fw-bold mb-3">
+                        <i class="fas fa-cloud-upload-alt me-2"></i>Upload New File
+                    </h4>
+                    
+                    {% if files_count >= max_files %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            You've reached your file limit! <a href="{{ url_for('plans') }}" class="alert-link">Upgrade your plan</a> to upload more files.
+                        </div>
+                    {% else %}
+                        <div id="uploadArea" class="upload-area">
+                            <i class="fas fa-cloud-upload-alt text-primary fs-1 mb-3"></i>
+                            <h5>Drag & Drop files here</h5>
+                            <p class="text-muted">or click to browse</p>
+                            <input type="file" id="fileInput" class="d-none" accept=".txt,.pdf,.png,.jpg,.jpeg,.gif,.mp4,.mp3,.zip,.rar,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.py,.js,.html,.css">
+                            <button type="button" class="btn btn-primary" onclick="document.getElementById('fileInput').click()">
+                                <i class="fas fa-folder-open me-2"></i>Choose File
+                            </button>
+                        </div>
+                        
+                        <div id="uploadProgress" class="mt-3 d-none">
+                            <div class="progress">
+                                <div class="progress-bar" role="progressbar" style="width: 0%"></div>
+                            </div>
+                            <p class="text-center mt-2 mb-0">Uploading...</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Files List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="fw-bold mb-0">
+                            <i class="fas fa-folder me-2"></i>Your Files
+                        </h4>
+                        <a href="{{ url_for('plans') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-crown me-1"></i>Upgrade Plan
+                        </a>
+                    </div>
+                    
+                    {% if files %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>File Name</th>
+                                        <th>Type</th>
+                                        <th>Size</th>
+                                        <th>Uploaded</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for file in files %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-file-alt text-primary me-2"></i>
+                                                <span class="fw-medium">{{ file.original_name }}</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-secondary">{{ file.file_type.upper() }}</span>
+                                        </td>
+                                        <td>
+                                            {% if file.file_size > 1024*1024 %}
+                                                {{ "%.1f"|format(file.file_size/(1024*1024)) }} MB
+                                            {% elif file.file_size > 1024 %}
+                                                {{ "%.1f"|format(file.file_size/1024) }} KB
+                                            {% else %}
+                                                {{ file.file_size }} B
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">
+                                                {{ file.created_at[:10] }}
+                                            </small>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group btn-group-sm">
+                                                <a href="{{ url_for('download_file', file_id=file.id) }}" 
+                                                   class="btn btn-outline-primary" title="Download">
+                                                    <i class="fas fa-download"></i>
+                                                </a>
+                                                <button class="btn btn-outline-danger" 
+                                                        onclick="deleteFile({{ file.id }})" title="Delete">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-folder-open text-muted fs-1 mb-3"></i>
+                            <h5 class="text-muted">No files uploaded yet</h5>
+                            <p class="text-muted">Upload your first file to get started!</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function uploadFile() {
+    const fileInput = document.getElementById('fileInput');
+    const file = fileInput.files[0];
+    
+    if (!file) return;
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    const progressDiv = document.getElementById('uploadProgress');
+    const progressBar = progressDiv.querySelector('.progress-bar');
+    
+    progressDiv.classList.remove('d-none');
+    
+    fetch('/upload', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        progressDiv.classList.add('d-none');
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Upload failed: ' + data.error);
+        }
+    })
+    .catch(error => {
+        progressDiv.classList.add('d-none');
+        alert('Upload failed: ' + error);
+    });
+}
+
+function deleteFile(fileId) {
+    if (confirm('Are you sure you want to delete this file?')) {
+        window.location.href = '/delete/' + fileId;
+    }
+}
+
+// File input change event
+document.getElementById('fileInput').addEventListener('change', uploadFile);
+</script>
+{% endblock %}

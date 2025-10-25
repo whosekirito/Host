@@ -1,0 +1,257 @@
+{% extends "base.html" %}
+
+{% block title %}Pricing Plans - Oppai Xd{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-5">
+    <div class="row text-center mb-5">
+        <div class="col-lg-8 mx-auto">
+            <h1 class="display-4 fw-bold text-white mb-4">Choose Your Plan</h1>
+            <p class="lead text-white-50">Select the perfect plan for your file hosting needs</p>
+        </div>
+    </div>
+
+    <div class="row g-4 justify-content-center">
+        <!-- Free Plan -->
+        <div class="col-lg-3 col-md-6">
+            <div class="card plan-card">
+                <div class="plan-header">
+                    <h3>Free</h3>
+                    <div class="plan-price">₹{{ plans.free }}</div>
+                    <p class="mb-0">per month</p>
+                </div>
+                <div class="plan-features">
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>{{ max_files.free }} File Upload</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>100MB Storage</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Basic Support</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Standard Speed</li>
+                    </ul>
+                    {% if session.user_id %}
+                        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-primary w-100">
+                            {% if session.plan == 'free' %}Current Plan{% else %}Downgrade{% endif %}
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('register') }}" class="btn btn-outline-primary w-100">Get Started</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Basic Plan -->
+        <div class="col-lg-3 col-md-6">
+            <div class="card plan-card">
+                <div class="plan-header">
+                    <h3>Basic</h3>
+                    <div class="plan-price">₹{{ plans.basic }}</div>
+                    <p class="mb-0">per month</p>
+                </div>
+                <div class="plan-features">
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>{{ max_files.basic }} File Uploads</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>1GB Storage</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Email Support</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Faster Upload</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>File Sharing</li>
+                    </ul>
+                    {% if session.user_id %}
+                        <a href="#" class="btn btn-primary w-100" onclick="upgradePlan('basic')">
+                            {% if session.plan == 'basic' %}Current Plan{% else %}Upgrade{% endif %}
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('register') }}" class="btn btn-primary w-100">Choose Plan</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Premium Plan -->
+        <div class="col-lg-3 col-md-6">
+            <div class="card plan-card featured">
+                <div class="plan-header">
+                    <h3>Premium</h3>
+                    <div class="plan-price">₹{{ plans.premium }}</div>
+                    <p class="mb-0">per month</p>
+                    <span class="badge bg-warning text-dark mt-2">Most Popular</span>
+                </div>
+                <div class="plan-features">
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>{{ max_files.premium }} File Uploads</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>5GB Storage</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Priority Support</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Lightning Fast</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Advanced Sharing</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Custom Branding</li>
+                    </ul>
+                    {% if session.user_id %}
+                        <a href="#" class="btn btn-primary w-100" onclick="upgradePlan('premium')">
+                            {% if session.plan == 'premium' %}Current Plan{% else %}Upgrade{% endif %}
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('register') }}" class="btn btn-primary w-100">Choose Plan</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Pro Plan -->
+        <div class="col-lg-3 col-md-6">
+            <div class="card plan-card">
+                <div class="plan-header">
+                    <h3>Pro</h3>
+                    <div class="plan-price">₹{{ plans.pro }}</div>
+                    <p class="mb-0">per month</p>
+                </div>
+                <div class="plan-features">
+                    <ul class="list-unstyled">
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>{{ max_files.pro }} File Uploads</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>20GB Storage</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>24/7 Support</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Maximum Speed</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>API Access</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>White Label</li>
+                        <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Analytics</li>
+                    </ul>
+                    {% if session.user_id %}
+                        <a href="#" class="btn btn-primary w-100" onclick="upgradePlan('pro')">
+                            {% if session.plan == 'pro' %}Current Plan{% else %}Upgrade{% endif %}
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('register') }}" class="btn btn-primary w-100">Choose Plan</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Comparison -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="fw-bold text-center mb-4">Feature Comparison</h3>
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Features</th>
+                                    <th class="text-center">Free</th>
+                                    <th class="text-center">Basic</th>
+                                    <th class="text-center">Premium</th>
+                                    <th class="text-center">Pro</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>File Uploads</strong></td>
+                                    <td class="text-center">{{ max_files.free }}</td>
+                                    <td class="text-center">{{ max_files.basic }}</td>
+                                    <td class="text-center">{{ max_files.premium }}</td>
+                                    <td class="text-center">{{ max_files.pro }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Storage</strong></td>
+                                    <td class="text-center">100MB</td>
+                                    <td class="text-center">1GB</td>
+                                    <td class="text-center">5GB</td>
+                                    <td class="text-center">20GB</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Support</strong></td>
+                                    <td class="text-center">Basic</td>
+                                    <td class="text-center">Email</td>
+                                    <td class="text-center">Priority</td>
+                                    <td class="text-center">24/7</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Upload Speed</strong></td>
+                                    <td class="text-center">Standard</td>
+                                    <td class="text-center">Fast</td>
+                                    <td class="text-center">Lightning</td>
+                                    <td class="text-center">Maximum</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>File Sharing</strong></td>
+                                    <td class="text-center">❌</td>
+                                    <td class="text-center">✅</td>
+                                    <td class="text-center">✅</td>
+                                    <td class="text-center">✅</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>API Access</strong></td>
+                                    <td class="text-center">❌</td>
+                                    <td class="text-center">❌</td>
+                                    <td class="text-center">❌</td>
+                                    <td class="text-center">✅</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQ Section -->
+    <div class="row mt-5">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <h3 class="fw-bold text-center mb-4">Frequently Asked Questions</h3>
+                    <div class="accordion" id="faqAccordion">
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                    Can I change my plan anytime?
+                                </button>
+                            </h2>
+                            <div id="faq1" class="accordion-collapse collapse show" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                    What file types are supported?
+                                </button>
+                            </h2>
+                            <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    We support all common file types including documents, images, videos, audio, archives, and code files.
+                                </div>
+                            </div>
+                        </div>
+                        <div class="accordion-item">
+                            <h2 class="accordion-header">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                    Is my data secure?
+                                </button>
+                            </h2>
+                            <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                <div class="accordion-body">
+                                    Absolutely! Your files are encrypted and stored securely using enterprise-grade security measures.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function upgradePlan(plan) {
+    if (!confirm(`Are you sure you want to upgrade to ${plan} plan?`)) {
+        return;
+    }
+    
+    // In a real application, this would integrate with a payment gateway
+    alert('Payment integration coming soon! Contact admin to upgrade your plan.');
+}
+</script>
+{% endblock %}
