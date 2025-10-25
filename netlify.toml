@@ -1,0 +1,11 @@
+[build]
+  command = "echo 'Static site build complete'"
+  publish = "."
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/app"
+  status = 200
+
+[functions]
+  directory = "netlify/functions"
