@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block title %}Oppai Xd - Secure File Hosting Platform{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <h1 class="hero-title">Oppai Xd</h1>
+                <p class="hero-subtitle">Secure, fast, and reliable file hosting platform</p>
+                <div class="d-flex gap-3 justify-content-center flex-wrap">
+                    <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">
+                        <i class="fas fa-rocket me-2"></i>Get Started Free
+                    </a>
+                    <a href="{{ url_for('plans') }}" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-crown me-2"></i>View Plans
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-lg-8 mx-auto">
+                <h2 class="display-4 fw-bold text-white mb-4">Why Choose Oppai Xd?</h2>
+                <p class="lead text-white-50">Powerful features designed for modern file hosting needs</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h4>Secure Storage</h4>
+                    <p>Your files are protected with enterprise-grade security and encryption.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h4>Lightning Fast</h4>
+                    <p>Upload and download files at blazing speeds with our optimized infrastructure.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-mobile-alt"></i>
+                    </div>
+                    <h4>Mobile Friendly</h4>
+                    <p>Access your files from anywhere with our responsive design and mobile app.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-infinity"></i>
+                    </div>
+                    <h4>Unlimited Bandwidth</h4>
+                    <p>No bandwidth limits on premium plans. Share files without restrictions.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-cloud"></i>
+                    </div>
+                    <h4>Cloud Storage</h4>
+                    <p>Reliable cloud storage powered by Supabase with 99.9% uptime guarantee.</p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-headset"></i>
+                    </div>
+                    <h4>24/7 Support</h4>
+                    <p>Get help whenever you need it with our dedicated support team.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Pricing Preview -->
+<section class="py-5">
+    <div class="container">
+        <div class="row text-center mb-5">
+            <div class="col-lg-8 mx-auto">
+                <h2 class="display-4 fw-bold text-white mb-4">Simple Pricing</h2>
+                <p class="lead text-white-50">Choose the plan that fits your needs</p>
+            </div>
+        </div>
+        
+        <div class="row g-4 justify-content-center">
+            <div class="col-lg-3 col-md-6">
+                <div class="card plan-card">
+                    <div class="plan-header">
+                        <h3>Free</h3>
+                        <div class="plan-price">₹0</div>
+                        <p class="mb-0">per month</p>
+                    </div>
+                    <div class="plan-features">
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>1 File Upload</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>100MB Storage</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Basic Support</li>
+                        </ul>
+                        <a href="{{ url_for('register') }}" class="btn btn-outline-primary w-100">Get Started</a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6">
+                <div class="card plan-card featured">
+                    <div class="plan-header">
+                        <h3>Premium</h3>
+                        <div class="plan-price">₹799</div>
+                        <p class="mb-0">per month</p>
+                    </div>
+                    <div class="plan-features">
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>50 File Uploads</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>5GB Storage</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Priority Support</li>
+                            <li class="mb-2"><i class="fas fa-check text-success me-2"></i>Advanced Features</li>
+                        </ul>
+                        <a href="{{ url_for('register') }}" class="btn btn-primary w-100">Choose Plan</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="text-center mt-5">
+            <a href="{{ url_for('plans') }}" class="btn btn-outline-light btn-lg">
+                <i class="fas fa-list me-2"></i>View All Plans
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8 text-center">
+                <div class="card">
+                    <div class="card-body p-5">
+                        <h2 class="display-5 fw-bold mb-4">Ready to Get Started?</h2>
+                        <p class="lead mb-4">Join thousands of users who trust Oppai Xd for their file hosting needs.</p>
+                        <div class="d-flex gap-3 justify-content-center flex-wrap">
+                            <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-user-plus me-2"></i>Create Account
+                            </a>
+                            <a href="{{ url_for('login') }}" class="btn btn-outline-primary btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
