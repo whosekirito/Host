@@ -8,6 +8,10 @@ import string
 from datetime import datetime, timedelta
 import json
 import io
+import smtplib
+import re
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from supabase import create_client, Client
 from config import *
 import logging
@@ -30,6 +34,59 @@ except Exception as e:
 def generate_user_id():
     """Generate a random user ID"""
     return ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+
+def generate_verification_code():
+    """Generate a 6-digit verification code"""
+    return ''.join(random.choices(string.digits, k=6))
+
+def is_gmail(email):
+    """Check if email is from Gmail"""
+    return email.lower().endswith('@gmail.com')
+
+def send_verification_email(email, verification_code):
+    """Send verification email"""
+    try:
+        # Email configuration
+        smtp_server = "smtp.gmail.com"
+        smtp_port = 587
+        sender_email = "whosekirito@gmail.com"
+        sender_password = os.getenv('GMAIL_APP_PASSWORD', 'your-app-password')
+        
+        # Create message
+        msg = MIMEMultipart()
+        msg['From'] = sender_email
+        msg['To'] = email
+        msg['Subject'] = "Verify Your Oppai Xd Account"
+        
+        # Email body
+        body = f"""
+        <html>
+        <body>
+            <h2>Welcome to Oppai Xd!</h2>
+            <p>Thank you for registering. Please verify your email address by entering the following code:</p>
+            <h1 style="color: #6366f1; text-align: center; font-size: 2em;">{verification_code}</h1>
+            <p>This code will expire in 10 minutes.</p>
+            <p>If you didn't create an account, please ignore this email.</p>
+            <br>
+            <p>Best regards,<br>Oppai Xd Team</p>
+        </body>
+        </html>
+        """
+        
+        msg.attach(MIMEText(body, 'html'))
+        
+        # Send email
+        server = smtplib.SMTP(smtp_server, smtp_port)
+        server.starttls()
+        server.login(sender_email, sender_password)
+        text = msg.as_string()
+        server.sendmail(sender_email, email, text)
+        server.quit()
+        
+        return True
+    except Exception as e:
+        logger.error(f"Email sending failed: {e}")
+        return False
 
 def allowed_file(filename):
     """Check if file extension is allowed"""
@@ -73,6 +130,11 @@ def register():
         email = request.form['email']
         password = request.form['password']
         
+        # Validate Gmail only
+        if not is_gmail(email):
+            flash('Only Gmail addresses are allowed for registration!', 'error')
+            return render_template('register.html')
+        
         # Generate random user ID
         user_id = generate_user_id()
         
@@ -83,24 +145,38 @@ def register():
                 flash('Email already registered!', 'error')
                 return render_template('register.html')
             
-            # Create user
+            # Generate verification code
+            verification_code = generate_verification_code()
+            verification_expires = datetime.now() + timedelta(minutes=10)
+            
+            # Create user (unverified initially)
             user_data = {
                 'user_id': user_id,
                 'username': username,
                 'email': email,
                 'password': generate_password_hash(password),
                 'plan': 'free',
+                'is_verified': False,
+                'verification_code': verification_code,
+                'verification_expires': verification_expires.isoformat(),
+                'is_admin': False,
                 'created_at': datetime.now().isoformat()
             }
             
             result = supabase.table('users').insert(user_data).execute()
             
             if result.data:
-                session['user_id'] = user_id
-                session['username'] = username
-                session['plan'] = 'free'
-                flash('Registration successful!', 'success')
-                return redirect(url_for('dashboard'))
+                # Send verification email
+                if send_verification_email(email, verification_code):
+                    session['user_id'] = user_id
+                    session['username'] = username
+                    session['plan'] = 'free'
+                    session['is_verified'] = False
+                    flash('Registration successful! Please check your email for verification code.', 'success')
+                    return redirect(url_for('verify_email'))
+                else:
+                    flash('Registration successful but email verification failed. Please contact support.', 'warning')
+                    return redirect(url_for('verify_email'))
             else:
                 flash('Registration failed!', 'error')
                 
@@ -123,9 +199,21 @@ def login():
             
             if result.data and check_password_hash(result.data[0]['password'], password):
                 user = result.data[0]
+                
+                # Check if email is verified
+                if not user.get('is_verified', False):
+                    session['user_id'] = user['user_id']
+                    session['username'] = user['username']
+                    session['plan'] = user['plan']
+                    session['is_verified'] = False
+                    flash('Please verify your email before logging in!', 'warning')
+                    return redirect(url_for('verify_email'))
+                
                 session['user_id'] = user['user_id']
                 session['username'] = user['username']
                 session['plan'] = user['plan']
+                session['is_verified'] = user.get('is_verified', False)
+                session['is_admin'] = user.get('is_admin', False)
                 flash('Login successful!', 'success')
                 return redirect(url_for('dashboard'))
             else:
@@ -137,6 +225,93 @@ def login():
     
     return render_template('login.html')
 
+@app.route('/verify_email', methods=['GET', 'POST'])
+def verify_email():
+    """Email verification page"""
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    if request.method == 'POST':
+        verification_code = request.form['verification_code']
+        user_id = session['user_id']
+        
+        try:
+            # Get user verification data
+            result = supabase.table('users').select('verification_code, verification_expires, is_verified').eq('user_id', user_id).execute()
+            
+            if result.data:
+                user = result.data[0]
+                
+                # Check if already verified
+                if user['is_verified']:
+                    flash('Email already verified!', 'success')
+                    return redirect(url_for('dashboard'))
+                
+                # Check if code matches and not expired
+                if (user['verification_code'] == verification_code and 
+                    datetime.now() < datetime.fromisoformat(user['verification_expires'])):
+                    
+                    # Update user as verified
+                    supabase.table('users').update({
+                        'is_verified': True,
+                        'verification_code': None,
+                        'verification_expires': None
+                    }).eq('user_id', user_id).execute()
+                    
+                    session['is_verified'] = True
+                    flash('Email verified successfully!', 'success')
+                    return redirect(url_for('dashboard'))
+                else:
+                    flash('Invalid or expired verification code!', 'error')
+            else:
+                flash('User not found!', 'error')
+                
+        except Exception as e:
+            logger.error(f"Verification error: {e}")
+            flash('Verification failed! Please try again.', 'error')
+    
+    return render_template('verify_email.html')
+
+@app.route('/resend_verification', methods=['POST'])
+def resend_verification():
+    """Resend verification email"""
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    user_id = session['user_id']
+    
+    try:
+        # Get user email
+        result = supabase.table('users').select('email, is_verified').eq('user_id', user_id).execute()
+        
+        if result.data:
+            user = result.data[0]
+            
+            if user['is_verified']:
+                return jsonify({'error': 'Email already verified'}), 400
+            
+            # Generate new verification code
+            verification_code = generate_verification_code()
+            verification_expires = datetime.now() + timedelta(minutes=10)
+            
+            # Update verification code
+            supabase.table('users').update({
+                'verification_code': verification_code,
+                'verification_expires': verification_expires.isoformat()
+            }).eq('user_id', user_id).execute()
+            
+            # Send email
+            if send_verification_email(user['email'], verification_code):
+                return jsonify({'success': 'Verification email sent!'})
+            else:
+                return jsonify({'error': 'Failed to send email'}), 500
+        else:
+            return jsonify({'error': 'User not found'}), 404
+            
+    except Exception as e:
+        logger.error(f"Resend verification error: {e}")
+        return jsonify({'error': 'Failed to resend verification'}), 500
+
 @app.route('/logout')
 def logout():
     """User logout"""
@@ -144,11 +319,42 @@ def logout():
     flash('Logged out successfully!', 'success')
     return redirect(url_for('index'))
 
+def create_admin_user():
+    """Create admin user if not exists"""
+    try:
+        # Check if admin exists
+        result = supabase.table('users').select('id').eq('email', 'whosekirito@gmail.com').execute()
+        
+        if not result.data:
+            # Create admin user
+            admin_data = {
+                'user_id': 'admin',
+                'username': 'Admin',
+                'email': 'whosekirito@gmail.com',
+                'password': generate_password_hash('admin123'),  # Change this password
+                'plan': 'pro',
+                'is_verified': True,
+                'is_admin': True,
+                'created_at': datetime.now().isoformat()
+            }
+            
+            supabase.table('users').insert(admin_data).execute()
+            logger.info("Admin user created successfully")
+        else:
+            logger.info("Admin user already exists")
+    except Exception as e:
+        logger.error(f"Error creating admin user: {e}")
+
 @app.route('/dashboard')
 def dashboard():
     """User dashboard"""
     if 'user_id' not in session:
         return redirect(url_for('login'))
+    
+    # Check if email is verified
+    if not session.get('is_verified', False):
+        flash('Please verify your email to access the dashboard!', 'warning')
+        return redirect(url_for('verify_email'))
     
     user_id = session['user_id']
     plan = session.get('plan', 'free')
@@ -303,7 +509,18 @@ def plans():
 @app.route('/admin')
 def admin():
     """Admin panel"""
-    if 'user_id' not in session or session.get('user_id') != 'admin':
+    if 'user_id' not in session:
+        flash('Please login first!', 'error')
+        return redirect(url_for('login'))
+    
+    # Check if user is admin
+    try:
+        result = supabase.table('users').select('is_admin').eq('user_id', session['user_id']).execute()
+        if not result.data or not result.data[0]['is_admin']:
+            flash('Access denied! Admin privileges required.', 'error')
+            return redirect(url_for('index'))
+    except Exception as e:
+        logger.error(f"Admin check error: {e}")
         flash('Access denied!', 'error')
         return redirect(url_for('index'))
     
@@ -335,7 +552,16 @@ def admin():
 @app.route('/admin/update_plan', methods=['POST'])
 def update_user_plan():
     """Update user plan (admin only)"""
-    if 'user_id' not in session or session.get('user_id') != 'admin':
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    # Check if user is admin
+    try:
+        result = supabase.table('users').select('is_admin').eq('user_id', session['user_id']).execute()
+        if not result.data or not result.data[0]['is_admin']:
+            return jsonify({'error': 'Access denied'}), 403
+    except Exception as e:
+        logger.error(f"Admin check error: {e}")
         return jsonify({'error': 'Access denied'}), 403
     
     data = request.get_json()
@@ -360,7 +586,16 @@ def update_user_plan():
 @app.route('/admin/update_pricing', methods=['POST'])
 def update_pricing():
     """Update plan pricing (admin only)"""
-    if 'user_id' not in session or session.get('user_id') != 'admin':
+    if 'user_id' not in session:
+        return jsonify({'error': 'Not authenticated'}), 401
+    
+    # Check if user is admin
+    try:
+        result = supabase.table('users').select('is_admin').eq('user_id', session['user_id']).execute()
+        if not result.data or not result.data[0]['is_admin']:
+            return jsonify({'error': 'Access denied'}), 403
+    except Exception as e:
+        logger.error(f"Admin check error: {e}")
         return jsonify({'error': 'Access denied'}), 403
     
     data = request.get_json()
@@ -375,4 +610,6 @@ def update_pricing():
         return jsonify({'error': 'Update failed'}), 500
 
 if __name__ == '__main__':
+    # Create admin user on startup
+    create_admin_user()
     app.run(host=FLASK_HOST, port=FLASK_PORT, debug=DEBUG)

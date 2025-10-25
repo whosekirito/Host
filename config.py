@@ -16,6 +16,10 @@ FLASK_HOST = '0.0.0.0'
 FLASK_PORT = 5000
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
+# Email Configuration
+GMAIL_APP_PASSWORD = os.getenv('GMAIL_APP_PASSWORD', 'your-gmail-app-password')
+ADMIN_EMAIL = 'whosekirito@gmail.com'
+
 # File Upload Configuration
 MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB
 ALLOWED_EXTENSIONS = {
