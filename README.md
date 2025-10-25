@@ -1,83 +1,25 @@
 # Oppai Xd - File Hosting Platform
 
-A modern, secure file hosting platform built with Flask and Supabase, featuring user authentication, paid plans, and an admin panel.
+A modern, secure file hosting platform built with Flask and designed for Netlify deployment.
 
-## 🌟 Features
+## Features
 
-- **Secure File Storage**: Enterprise-grade security with Supabase
-- **User Authentication**: Registration and login with random user IDs
-- **Paid Plans**: Multiple tiers with Indian Rupee pricing
-- **Admin Panel**: Complete user and plan management
-- **Modern UI**: Beautiful, responsive design with Bootstrap 5
-- **File Management**: Upload, download, and delete files
-- **Plan Management**: Admin can modify pricing and user plans
+- 🚀 **Modern UI**: Beautiful, responsive design with Bootstrap 5
+- 🔒 **Secure**: Enterprise-grade security and encryption
+- ⚡ **Fast**: Optimized for speed and performance
+- 📱 **Mobile Friendly**: Responsive design that works on all devices
+- ☁️ **Cloud Storage**: Powered by Supabase for reliable storage
+- 💰 **Flexible Pricing**: Free and premium plans available
 
-## 🚀 Quick Start
-
-### 1. Setup Environment
-
-```bash
-# Clone or download the project
-cd oppai-xd
-
-# Run setup script
-python setup.py
-```
-
-### 2. Configure Supabase
-
-1. Go to [Supabase](https://supabase.com) and create a new project
-2. Get your project URL and API keys from Settings > API
-3. Create a storage bucket named `oppai-files`
-4. Run the SQL from `database_schema.sql` in the SQL editor
-5. Update `.env` file with your credentials:
-
-```env
-SUPABASE_URL=your-supabase-url
-SUPABASE_KEY=your-supabase-anon-key
-SUPABASE_SERVICE_KEY=your-supabase-service-role-key
-SECRET_KEY=your-secret-key
-```
-
-### 3. Run the Application
-
-```bash
-python app.py
-```
-
-Visit `http://localhost:5000` to access the platform.
-
-## 📋 Plans & Pricing
-
-| Plan | Price | Files | Storage | Features |
-|------|-------|-------|---------|----------|
-| Free | ₹0 | 1 | 100MB | Basic features |
-| Basic | ₹299 | 10 | 1GB | Email support, faster uploads |
-| Premium | ₹799 | 50 | 5GB | Priority support, advanced features |
-| Pro | ₹1,999 | 200 | 20GB | 24/7 support, API access |
-
-## 🛠️ Admin Features
-
-- **User Management**: View, edit, and delete users
-- **Plan Management**: Modify user plans and pricing
-- **File Management**: Monitor and manage uploaded files
-- **Statistics**: View platform usage statistics
-
-### Admin Access
-
-To access the admin panel, set a user's `user_id` to `'admin'` in the database.
-
-## 📁 Project Structure
+## Project Structure
 
 ```
-oppai-xd/
 ├── app.py                 # Main Flask application
 ├── config.py             # Configuration settings
-├── database_schema.sql   # Database schema
-├── setup.py              # Setup script
+├── index.html            # Static homepage (for Netlify)
+├── netlify.toml          # Netlify deployment configuration
 ├── requirements.txt      # Python dependencies
-├── .env.example         # Environment variables template
-├── templates/           # HTML templates
+├── templates/            # Flask templates
 │   ├── base.html
 │   ├── index.html
 │   ├── login.html
@@ -85,94 +27,113 @@ oppai-xd/
 │   ├── dashboard.html
 │   ├── plans.html
 │   └── admin.html
-└── static/              # Static files (CSS, JS, images)
+└── netlify/
+    └── functions/
+        ├── app.py        # Netlify serverless function
+        └── requirements.txt
 ```
 
-## 🔧 Configuration
+## Local Development
 
-### Environment Variables
+1. **Install dependencies**:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. **Set up environment variables**:
+   Create a `.env` file with:
+   ```
+   SUPABASE_URL=your-supabase-url
+   SUPABASE_KEY=your-supabase-key
+   SUPABASE_SERVICE_KEY=your-supabase-service-key
+   SECRET_KEY=your-secret-key-here
+   DEBUG=true
+   ```
+
+3. **Run the application**:
+   ```bash
+   python app.py
+   ```
+
+4. **Access the website**:
+   Open http://localhost:5000 in your browser
+
+## Netlify Deployment
+
+### Option 1: Static Site (Recommended)
+
+The project includes a static `index.html` file that can be deployed directly to Netlify:
+
+1. **Connect your repository** to Netlify
+2. **Set build settings**:
+   - Build command: `echo 'Static site build complete'`
+   - Publish directory: `.`
+3. **Deploy** - Netlify will automatically deploy your site
+
+### Option 2: Serverless Functions
+
+For full Flask functionality with serverless functions:
+
+1. **Connect your repository** to Netlify
+2. **Set build settings**:
+   - Build command: `pip install -r netlify/functions/requirements.txt`
+   - Publish directory: `.`
+3. **Set environment variables** in Netlify dashboard
+4. **Deploy** - The Flask app will run as serverless functions
+
+## Environment Variables
+
+Required environment variables for full functionality:
 
 - `SUPABASE_URL`: Your Supabase project URL
 - `SUPABASE_KEY`: Your Supabase anon key
 - `SUPABASE_SERVICE_KEY`: Your Supabase service role key
 - `SECRET_KEY`: Flask secret key for sessions
-- `DEBUG`: Enable debug mode (True/False)
 
-### File Upload Settings
+## Database Setup
 
-- Maximum file size: 100MB
-- Allowed extensions: txt, pdf, png, jpg, jpeg, gif, mp4, mp3, zip, rar, doc, docx, xls, xlsx, ppt, pptx, py, js, html, css
+1. Create a Supabase project
+2. Run the SQL schema from `database_schema.sql`
+3. Set up the storage bucket for file uploads
+4. Configure the environment variables
 
-## 🚀 Deployment
+## Features Overview
 
-### Using Render
+### Homepage
+- Modern hero section with call-to-action
+- Feature showcase with icons and descriptions
+- Pricing plans comparison
+- Responsive design for all devices
 
-1. Connect your GitHub repository to Render
-2. Set environment variables in Render dashboard
-3. Deploy automatically
-
-### Using Heroku
-
-1. Create a `Procfile`:
-```
-web: python app.py
-```
-
-2. Deploy using Heroku CLI:
-```bash
-heroku create your-app-name
-git push heroku main
-```
-
-### Using VPS
-
-1. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-2. Run with Gunicorn:
-```bash
-gunicorn -w 4 -b 0.0.0.0:5000 app:app
-```
-
-## 🔒 Security Features
-
+### User Authentication
+- User registration and login
+- Session management
 - Password hashing with Werkzeug
-- Secure file upload validation
-- User authentication and authorization
-- Admin-only access controls
-- File type and size restrictions
 
-## 📱 Mobile Support
+### File Management
+- File upload with drag & drop
+- File type validation
+- File download and deletion
+- Storage quota management
 
-The platform is fully responsive and works on all devices:
-- Mobile phones
-- Tablets
-- Desktop computers
+### Admin Panel
+- User management
+- File statistics
+- Plan management
 
-## 🤝 Contributing
+## Technologies Used
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+- **Backend**: Flask (Python)
+- **Frontend**: HTML5, CSS3, Bootstrap 5, JavaScript
+- **Database**: Supabase (PostgreSQL)
+- **Storage**: Supabase Storage
+- **Deployment**: Netlify
+- **Icons**: Font Awesome
 
-## 📄 License
+## License
 
-This project is open source and available under the MIT License.
+This project is licensed under the MIT License.
 
-## 🆘 Support
+## Support
 
-For support and questions:
-- Create an issue on GitHub
-- Contact the development team
-
-## 🔄 Updates
-
-- Version 1.0.0: Initial release with basic file hosting
-- Future updates will include payment integration, advanced analytics, and more features
-
----
-
-**Oppai Xd** - Secure, fast, and reliable file hosting platform built with ❤️
+For support and questions, please contact the development team.
